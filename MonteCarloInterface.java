@@ -6,13 +6,13 @@ import java.rmi.*;
  * @author M. L. Liu
  */
 
-public interface HelloInterface extends Remote {
+public interface MonteCarloInterface extends Remote {
 /**
  * This remote method returns a message.
- * @param  name - a String containing a name.
- * @return a String message.
+ * @param  nPuntos - número de puntos a ser calculados.
+ * @return cantidade de puntos que se atopan debaixo da curva.
  */
-   public String sayHello(String name) 
+   public int MonteCarlo(int nPuntos)
       throws java.rmi.RemoteException;
 
 } //end interface
