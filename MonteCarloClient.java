@@ -27,20 +27,20 @@ public class MonteCarloClient {
             System.out.println("How many processes must the workload be divided between?\n a) 1 \n b) 2 \n c) 4 \n d) 8 " );
             String option = br.readLine();
             switch (option){
-               case "a", "A":
+               case "a", "A", "1":
                   pnum = 1;
                   break;
-               case "b", "B":
+               case "b", "B", "2":
                   pnum = 2;
                   break;
-               case "c", "C":
+               case "c", "C", "4":
                   pnum = 4;
                   break;
-               case "d", "D":
+               case "d", "D", "8":
                   pnum = 8;
                   break;
                default:
-                  System.out.println("Incorrect option. Try again. Enter only the letter, without the parenthesis." );
+                  System.out.println("Incorrect option. Try again. Enter only the letter, without the parenthesis, or the corresponding number." );
             }
          }
          //We move the registry to after knowing the number of processes so we can lookup the right amount of servers
@@ -63,6 +63,7 @@ public class MonteCarloClient {
             if(n <= 0) {
                System.out.println("The input must be a positive integer. Try again.");
             }
+            System.out.println("Great! Starting call for calculation.");
          }
          //And calculate the distribution according to the number of processes, already creating the threads
          ClientThread[] client = new ClientThread[pnum];
