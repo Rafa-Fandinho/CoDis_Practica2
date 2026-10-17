@@ -1,5 +1,7 @@
 import java.io.*;
 import java.rmi.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class represents the object client for a distributed
@@ -10,9 +12,11 @@ import java.rmi.*;
 
 public class MonteCarloClient {
 
+   private static final int N_BLOCKS = 100;  //We'll define an arbitrary number of blocks for dynamic distribution, since I feel asking the user doesn't make much sense in this case
+
    public static void main(String args[]) {
       try {
-         int RMIPort;         
+         int RMIPort;
          String hostName;
          InputStreamReader is = new InputStreamReader(System.in);
          BufferedReader br = new BufferedReader(is);
@@ -43,7 +47,7 @@ public class MonteCarloClient {
                   System.out.println("Incorrect option. Try again. Enter only the letter, without the parenthesis, or the corresponding number." );
             }
          }
-         //We move the registry to after knowing the number of processes so we can lookup the right amount of servers
+         //We move the registry to after knowing the number of processes so we can look up the right amount of servers
          MonteCarloInterface[] h = new MonteCarloInterface[pnum];
          for (int j = 0; j < pnum; j++){
             String registryURL = "rmi://" + hostName+ ":" + portNum + "/MonteCarlo" + j;
@@ -63,18 +67,18 @@ public class MonteCarloClient {
             if(n <= 0) {
                System.out.println("The input must be a positive integer. Try again.");
             }
-            System.out.println("Great! Starting call for calculation.");
          }
+         int b = Math.max(n /N_BLOCKS, 1); //n might not be divisible by N_BLOCKS, so instead of keeping track of a number of blocks, we'll keep in track the points remaining for the calculation
+         //We use a maximum to prevent infinite loops if n<100 which would generate blocks of size 0).
+         System.out.println("Great! Starting call for calculation.");
          //And calculate the distribution according to the number of processes, already creating the threads
-         ClientThread[] client = new ClientThread[pnum];
+         AtomicInteger procesado = new AtomicInteger(0);
+         AtomicInteger total = new AtomicInteger(0);
+         AtomicBoolean erro = new AtomicBoolean(false);
+         DynamicThread[] client = new DynamicThread[pnum];
          Thread[] threads = new Thread[pnum];
-         int base = n / pnum;
-         for (int j = 0; j < n % pnum; j++){
-            client[j] = new ClientThread(h[j], base + 1);
-            threads[j] = new Thread(client[j]);
-         }
-         for (int j = n % pnum; j < pnum; j++){
-            client[j] = new ClientThread(h[j], base);
+         for (int j = 0; j < pnum; j++){  //It's sufficient to create the thread, since distribution is now made dynamically
+            client[j] = new DynamicThread(h[j], n, b, procesado, total, erro);
             threads[j] = new Thread(client[j]);
          }
          // invoke the remote method
@@ -87,18 +91,14 @@ public class MonteCarloClient {
          for (int j = 0; j < pnum; j++) {
             threads[j].join();
          }
-         int total = 0;
-         for (int j = 0; j < pnum; j++) {
-            total += client[j].getResultado();
-         }
-         double resultado =  (double) total / n;
+         double resultado =  (double) total.get()/n;
          long fin = System.currentTimeMillis();
          //Finally, we print the result
          System.out.println("The result of the calculation for the integral value is: " + resultado);
          System.out.println("The task was completed in: " + (fin - inicio) + " milliseconds.");
-      } // end try 
+      } // end try
       catch (Exception e) {
          System.out.println("Exception in MonteCarloClient: " + e);
-      } 
+      }
    } //end main
 }//end class
